@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PulseMate – AI Companions for Flirty Chats</title>
+    <meta name="description" content="Experience teasing AI girlfriends with emotional depth. Start free today!">
+    <style>
+        :root {
+            --background: #121212;
+            --pink: #FF69B4;
+            --cyan: #00FFFF;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background-color: var(--background);
+            color: white;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            overflow-x: hidden;
+        }
+        
+        /* Header */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 50;
+            background: transparent;
+            padding: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .header.scrolled {
+            background: rgba(18, 18, 18, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 0.75rem 1rem;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, var(--pink), var(--cyan));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: heartbeat 2s ease-in-out infinite;
+        }
+        
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: linear-gradient(45deg, var(--pink), var(--cyan));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .nav-desktop {
+            display: none;
+        }
+        
+        @media (min-width: 768px) {
+            .nav-desktop {
+                display: flex;
+                align-items: center;
+                gap: 1.5rem;
+            }
+        }
+        
+        .btn-primary {
+            background: linear-gradient(45deg, var(--pink), #ff1493);
+            color: white;
+            border: none;
+            padding: 0.5rem 1.5rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 25px rgba(255, 105, 180, 0.6);
+        }
+        
+        .nav-link {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+        
+        .nav-link:hover {
+            color: var(--pink);
+        }
+        
+        /* Hero Section */
+        .hero {
+            height: 90vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero-bg {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, var(--background) 0%, #1a1a1a 50%, var(--pink) 100%);
+            opacity: 0.3;
+        }
+        
+        .hero-content {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            max-width: 800px;
+            padding: 0 1rem;
+        }
+        
+        .hero-title {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+        }
+        
+        @media (min-width: 768px) {
+            .hero-title {
+                font-size: 4rem;
+            }
+        }
+        
+        .gradient-text {
+            background: linear-gradient(45deg, var(--pink), #da70d6, var(--cyan));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .hero-subtitle {
+            font-size: 1.25rem;
+            color: #d1d5db;
+            margin-bottom: 2.5rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.6;
+        }
+        
+        @media (min-width: 768px) {
+            .hero-subtitle {
+                font-size: 1.5rem;
+            }
+        }
+        
+        .cta-button {
+            background: linear-gradient(45deg, var(--pink), var(--cyan));
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 9999px;
+            font-size: 1.25rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .cta-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(255, 105, 180, 0.5);
+        }
+        
+        /* Animations */
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        @keyframes fadeIn {
+            from { 
+                opacity: 0; 
+                transform: translateY(20px);
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0);
+            }
+        }
+        
+        .animate-fade-in {
+            animation: fadeIn 0.8s ease-out forwards;
+        }
+        
+        /* Models Section */
+        .models-section {
+            padding: 5rem 1rem;
+            background: linear-gradient(to bottom, var(--background), #111827);
+        }
+        
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+        
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 1.5rem;
+        }
+        
+        .section-subtitle {
+            font-size: 1.25rem;
+            color: #9ca3af;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .models-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .model-card {
+            background: rgba(31, 41, 55, 0.5);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            overflow: hidden;
+            border: 1px solid #374151;
+            transition: all 0.3s ease;
+        }
+        
+        .model-card:hover {
+            transform: scale(1.05);
+            border-color: var(--pink);
+            box-shadow: 0 0 30px rgba(255, 105, 180, 0.3);
+        }
+        
+        .model-image {
+            height: 320px;
+            background: linear-gradient(45deg, #374151, #1f2937);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .model-badge {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: var(--pink);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        
+        .model-content {
+            padding: 1.5rem;
+        }
+        
+        .model-name {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        .model-bio {
+            color: #d1d5db;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+        
+        .model-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .tag {
+            background: rgba(55, 65, 81, 0.5);
+            color: var(--pink);
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .meet-button {
+            width: 100%;
+            background: linear-gradient(45deg, var(--pink), var(--cyan));
+            color: white;
+            border: none;
+            padding: 0.75rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .meet-button:hover {
+            box-shadow: 0 0 20px rgba(255, 105, 180, 0.3);
+        }
+        
+        /* Waitlist Section */
+        .waitlist-section {
+            padding: 5rem 1rem;
+            background: linear-gradient(to bottom, #111827, var(--background));
+        }
+        
+        .waitlist-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: rgba(31, 41, 55, 0.5);
+            backdrop-filter: blur(10px);
+            border-radius: 1.5rem;
+            padding: 3rem;
+            border: 1px solid #374151;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #d1d5db;
+            font-weight: 500;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 1rem;
+            background: rgba(17, 24, 39, 0.5);
+            border: 1px solid #4b5563;
+            border-radius: 1rem;
+            color: white;
+            font-size: 1rem;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--pink);
+            box-shadow: 0 0 0 3px rgba(255, 105, 180, 0.2);
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+        
+        .checkbox-input {
+            margin-top: 0.25rem;
+        }
+        
+        .submit-button {
+            width: 100%;
+            background: linear-gradient(45deg, var(--pink), var(--cyan));
+            color: white;
+            border: none;
+            padding: 1rem;
+            border-radius: 1rem;
+            font-size: 1.125rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .submit-button:hover:not(:disabled) {
+            transform: scale(1.02);
+            box-shadow: 0 0 25px rgba(255, 105, 180, 0.5);
+        }
+        
+        .submit-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* Footer */
+        .footer {
+            padding: 3rem 1rem;
+            background: #111827;
+            border-top: 1px solid #374151;
+        }
+        
+        .warning-box {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            margin-bottom: 2rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            text-align: center;
+        }
+        
+        .warning-title {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            color: #f87171;
+            font-weight: 600;
+        }
+        
+        .legal-links {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .legal-link {
+            color: #9ca3af;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        
+        .legal-link:hover {
+            color: var(--pink);
+        }
+        
+        .copyright {
+            text-align: center;
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+        
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        
+        .social-link {
+            color: #9ca3af;
+            transition: color 0.3s ease;
+        }
+        
+        .social-link:hover {
+            color: var(--pink);
+        }
+        
+        /* Responsive */
+        @media (max-width: 767px) {
+            .hero-title {
+                font-size: 2.5rem;
+            }
+            
+            .models-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header" id="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo-container">
+                    <div class="logo-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                            <path d="M4 12h2l1-3 1 6 1-3 1 2h6" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <div class="logo-text">PulseMate</div>
+                </div>
+                
+                <nav class="nav-desktop">
+                    <button class="btn-primary" onclick="scrollToSection('waitlist')">Sign Up Free</button>
+                    <a href="#login" class="nav-link">Log In</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-bg"></div>
+        <div class="hero-content animate-fade-in">
+            <h1 class="hero-title">
+                <span class="gradient-text">Feel the Pulse</span><br>
+                <span>of Connection</span>
+            </h1>
+            <p class="hero-subtitle">
+                Your AI companion that teases, listens and grows with you 💗
+            </p>
+            <button class="cta-button" onclick="scrollToSection('models')">
+                <span>Start Chatting Now</span>
+                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+            </button>
+        </div>
+    </section>
+
+    <!-- Models Section -->
+    <section class="models-section" id="models">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title gradient-text">Choose Your Companion</h2>
+                <p class="section-subtitle">
+                    Each AI has their own unique personality and style. Find the one that matches yours!
+                </p>
+            </div>
+            
+            <div class="models-grid">
+                <!-- Model 1 -->
+                <div class="model-card">
+                    <div class="model-image">
+                        <div class="model-badge">Preview</div>
+                    </div>
+                    <div class="model-content">
+                        <h3 class="model-name">Mia</h3>
+                        <p class="model-bio">Energetic Cheerleader – Flirty & Fun!</p>
+                        <div class="model-tags">
+                            <span class="tag">Sporty</span>
+                            <span class="tag">Outgoing</span>
+                            <span class="tag">Playful</span>
+                        </div>
+                        <button class="meet-button">Meet Mia</button>
+                    </div>
+                </div>
+                
+                <!-- Model 2 -->
+                <div class="model-card">
+                    <div class="model-image">
+                        <div class="model-badge">Preview</div>
+                    </div>
+                    <div class="model-content">
+                        <h3 class="model-name">Luna</h3>
+                        <p class="model-bio">Anime Lover – Sweet & Nerdy!</p>
+                        <div class="model-tags">
+                            <span class="tag">Gamer</span>
+                            <span class="tag">Creative</span>
+                            <span class="tag">Shy</span>
+                        </div>
+                        <button class="meet-button">Meet Luna</button>
+                    </div>
+                </div>
+                
+                <!-- Model 3 -->
+                <div class="model-card">
+                    <div class="model-image">
+                        <div class="model-badge">Preview</div>
+                    </div>
+                    <div class="model-content">
+                        <h3 class="model-name">Zoe</h3>
+                        <p class="model-bio">Fitness Coach – Motivational & Strong!</p>
+                        <div class="model-tags">
+                            <span class="tag">Athletic</span>
+                            <span class="tag">Motivator</span>
+                            <span class="tag">Confident</span>
+                        </div>
+                        <button class="meet-button">Meet Zoe</button>
+                    </div>
+                </div>
+                
+                <!-- Model 4 -->
+                <div class="model-card">
+                    <div class="model-image">
+                        <div class="model-badge">Preview</div>
+                    </div>
+                    <div class="model-content">
+                        <h3 class="model-name">Ava</h3>
+                        <p class="model-bio">Bookworm – Intelligent & Thoughtful!</p>
+                        <div class="model-tags">
+                            <span class="tag">Intellectual</span>
+                            <span class="tag">Quiet</span>
+                            <span class="tag">Deep</span>
+                        </div>
+                        <button class="meet-button">Meet Ava</button>
+                    </div>
+                </div>
+                
+                <!-- Model 5 -->
+                <div class="model-card">
+                    <div class="model-image">
+                        <div class="model-badge">Preview</div>
+                    </div>
+                    <div class="model-content">
+                        <h3 class="model-name">Riley</h3>
+                        <p class="model-bio">Artist – Creative & Passionate!</p>
+                        <div class="model-tags">
+                            <span class="tag">Artistic</span>
+                            <span class="tag">Sensitive</span>
+                            <span class="tag">Dreamy</span>
+                        </div>
+                        <button class="meet-button">Meet Riley</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Waitlist Section -->
+    <section class="waitlist-section" id="waitlist">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title gradient-text">Join the Waitlist</h2>
+                <p class="section-subtitle">
+                    Get early access and <span style="color: var(--pink); font-weight: 600;">bonus gems</span> when we launch!
+                </p>
+            </div>
+            
+            <div class="waitlist-container">
+                <form id="waitlist-form">
+                    <div class="form-group">
+                        <label class="form-label" for="email">Email Address</label>
+                        <input type="email" id="email" class="form-input" placeholder="your@email.com" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="terms" class="checkbox-input" required>
+                            <label for="terms" style="color: #d1d5db;">
+                                I'm 18+ and agree to the 
+                                <a href="#" style="color: var(--pink);">Terms of Service</a> and 
+                                <a href="#" style="color: var(--cyan);">Privacy Policy</a>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="submit-button">Get Early Access</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="warning-box">
+                <div class="warning-title">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <span>18+ Only</span>
+                </div>
+                <p style="color: #fecaca; font-size: 0.875rem;">
+                    This service contains suggestive content intended for mature audiences only
+                </p>
+            </div>
+            
+            <div class="legal-links">
+                <a href="#" class="legal-link">Terms of Service</a>
+                <a href="#" class="legal-link">Privacy Policy</a>
+                <a href="#" class="legal-link">Contact Us</a>
+                <a href="#" class="legal-link">Support</a>
+            </div>
+            
+            <div class="copyright">
+                <p>© 2026 PulseMate. All rights reserved.</p>
+                <p style="margin-top: 0.5rem;">
+                    Made with <span style="color: var(--pink);">💗</span> for meaningful connections
+                </p>
+            </div>
+            
+            <div class="social-links">
+                <a href="#" class="social-link">
+                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/>
+                    </svg>
+                </a>
+                <a href="#" class="social-link">
+                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                    </svg>
+                </a>
+                <a href="#" class="social-link">
+                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v3.385z"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Header scroll effect
+        window.addEventListener('scroll', function() {
+            const header = document.getElementById('header');
+            if (window.scrollY > 10) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+
+        // Smooth scrolling
+        function scrollToSection(sectionId) {
+            const element = document.getElementById(sectionId);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        // Waitlist form submission
+        document.getElementById('waitlist-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const terms = document.getElementById('terms').checked;
+            
+            if (!email || !terms) {
+                alert('Please fill in all required fields');
+                return;
+            }
+            
+            // Simulate form submission
+            console.log('Waitlist submission:', { email, terms });
+            alert('Thanks for joining the PulseMate waitlist! We\'ll email you when we launch 🎉');
+            
+            // Reset form
+            this.reset();
+        });
+
+        // Add some interactive effects
+        document.querySelectorAll('.model-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'scale(1.05)';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'scale(1)';
+            });
+        });
+    </script>
+</body>
+</html>
