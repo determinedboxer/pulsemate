@@ -8,7 +8,7 @@ import Link from "next/link";
 import { useChatProgress, trackMessageSent, trackTabUnlock, autoSaveChat } from "@/lib/progress/chatProgress";
 import { ProgressManager } from "@/lib/progress";
 import { useSupabase } from "@/components/SupabaseProvider";
-import { useSupabaseUser } from "@/hooks/useSupabaseUser";
+
 
 interface Message {
   id: number;
@@ -75,7 +75,6 @@ const aaliyahPhotos = [
 export default function AaliyahChatPage() {
   const { isLoaded, isSignedIn } = useUser();
   const { gemsBalance, unlockedPhotos, unlockedTabs, unlockPhoto, unlockTab, loading: supabaseLoading } = useSupabase();
-  const { gemsBalance, unlockContent, isUnlocked, loading: userLoading } = useSupabaseUser();
   const router = useRouter();
 
   useEffect(() => {
@@ -89,7 +88,7 @@ export default function AaliyahChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedReply, setSelectedReply] = useState<number | null>(null);
-  const [gemsBalanceLocal, setGemsBalanceLocal] = useState(0);
+  
   
   const [isTyping, setIsTyping] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
