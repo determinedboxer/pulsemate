@@ -675,24 +675,7 @@ export default function AaliyahChatPage() {
   ];
 
   // Load saved state
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedSparks = localStorage.getItem("sparksBalance");
-      const savedGems = localStorage.getItem("gemsBalance");
-      const savedUnlocked = localStorage.getItem("aaliyahUnlockedPhotos");
-      const savedSexUnlocked = localStorage.getItem("aaliyahSexChatUnlocked");
-      const savedDateUnlocked = localStorage.getItem("aaliyahDateUnlocked");
-      const savedMessages = localStorage.getItem("aaliyahMessages");
-      const savedStep = localStorage.getItem("aaliyahCurrentStep");
-      
-      if (savedGems) setGemsBalance(parseInt(savedGems));
-      if (savedUnlocked) setUnlockedPhotos(JSON.parse(savedUnlocked));
-      if (savedSexUnlocked === "true") setSexChatUnlocked(true);
-      if (savedDateUnlocked === "true") setDateUnlocked(true);
-      if (savedMessages) setMessages(JSON.parse(savedMessages));
-      if (savedStep) setCurrentStep(parseInt(savedStep));
-    }
-  }, []);
+  
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -973,11 +956,11 @@ export default function AaliyahChatPage() {
           </div>
           <div className="flex gap-2 items-center">
             <div className="bg-purple-900/40 px-3 py-1 rounded-full border border-purple-500/30">
-              <span className="text-sm font-medium">?? {gemsBalance}</span>
+              <span className="text-sm font-medium"> {gemsBalance}</span>
             </div>
             <Link href="/dashboard">
               <button className="px-4 py-2 bg-gray-700/70 hover:bg-gray-600 text-white rounded-xl font-medium transition text-sm">
-                < Back
+                Back
               </button>
             </Link>
           </div>
