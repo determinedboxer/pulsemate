@@ -1,0 +1,48 @@
+﻿  const handleUnlockPhoto = async (photoId: string, price: number) => {
+    const success = await unlockPhoto(photoId, price, "aaliyah");
+    if (success) {
+      alert("Photo unlocked! ");
+    } else {
+      alert("Not enough gems or error unlocking!");
+    }
+  };
+
+  const handleUnlockSexChat = async () => {
+    const success = await unlockTab("aaliyah_sex", 500, "aaliyah");
+    if (success) {
+      alert("Sex Chat unlocked! ");
+      setActiveTab("sex");
+      if (sexMessages.length === 0) {
+        const firstSexMessage: Message = {
+          id: Date.now(),
+          sender: "aaliyah",
+          text: sexResponses[0].text,
+          timestamp: new Date(),
+          photoId: sexResponses[0].photoId,
+        };
+        setSexMessages([firstSexMessage]);
+      }
+    } else {
+      alert("Not enough gems! You need 500 gems to unlock Sex Chat.");
+    }
+  };
+
+  const handleUnlockDate = async () => {
+    const success = await unlockTab("aaliyah_date", 500, "aaliyah");
+    if (success) {
+      alert("Date unlocked! ");
+      setActiveTab("date");
+      if (dateMessages.length === 0) {
+        const firstDateMessage: Message = {
+          id: Date.now(),
+          sender: "aaliyah",
+          text: dateScenarios[0].text,
+          timestamp: new Date(),
+          photoId: dateScenarios[0].photoId,
+        };
+        setDateMessages([firstDateMessage]);
+      }
+    } else {
+      alert("Not enough gems! You need 500 gems to unlock Date.");
+    }
+  };

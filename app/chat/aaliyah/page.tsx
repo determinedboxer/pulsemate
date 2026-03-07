@@ -7,6 +7,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useChatProgress, trackMessageSent, trackTabUnlock, autoSaveChat } from "@/lib/progress/chatProgress";
 import { ProgressManager } from "@/lib/progress";
+import { useSupabase } from "@/components/SupabaseProvider";
 import { useSupabaseUser } from "@/hooks/useSupabaseUser";
 
 interface Message {
@@ -73,6 +74,7 @@ const aaliyahPhotos = [
 
 export default function AaliyahChatPage() {
   const { isLoaded, isSignedIn } = useUser();
+  const { gemsBalance, unlockedPhotos, unlockedTabs, unlockPhoto, unlockTab, loading: supabaseLoading } = useSupabase();
   const { gemsBalance, unlockContent, isUnlocked, loading: userLoading } = useSupabaseUser();
   const router = useRouter();
 
@@ -88,15 +90,15 @@ export default function AaliyahChatPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedReply, setSelectedReply] = useState<number | null>(null);
   const [gemsBalanceLocal, setGemsBalanceLocal] = useState(0);
-  const [unlockedPhotos, setUnlockedPhotos] = useState<string[]>([]);
+  
   const [isTyping, setIsTyping] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
   const [selectedPhoto, setSelectedPhoto] = useState<{id: string, url: string, blurredUrl: string, isUnlocked: boolean} | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // Tab State
-  const [sexChatUnlocked, setSexChatUnlocked] = useState(false);
-  const [dateUnlocked, setDateUnlocked] = useState(false);
+  const sexChatUnlocked = unlockedTabs["aaliyah_sex"] || false;
+  const dateUnlocked = unlockedTabs["aaliyah_date"] || false;
   const [activeTab, setActiveTab] = useState<"main" | "sex" | "date">("main");
   const [sexStep, setSexStep] = useState(0);
   const [sexMessages, setSexMessages] = useState<Message[]>([]);
