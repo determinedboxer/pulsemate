@@ -5,6 +5,7 @@ import { ClerkProvider, SignInButton, SignUpButton, UserButton, SignedIn, Signed
 import Link from 'next/link';
 import CookieConsent from '@/components/CookieConsent';
 import AgeVerification from '@/components/AgeVerification';
+import { SupabaseProvider } from '@/components/SupabaseProvider';
 
 export const metadata: Metadata = {
   title: 'PulseMate – AI Companions for Flirty Chats',
@@ -76,9 +77,9 @@ export default function RootLayout({
             </div>
           </header>
           {children}
-          <AgeVerification />
+          <SupabaseProvider><AgeVerification />
           <CookieConsent />
-        </body>
+        </SupabaseProvider></body>
       </html>
     </ClerkProvider>
   );
