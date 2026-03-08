@@ -1,4 +1,4 @@
-﻿import { auth } from '@clerk/nextjs/server';
+import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase';
 
@@ -21,7 +21,7 @@ export async function POST() {
 
     const { data: newUser, error: insertError } = await supabaseServer
       .from('users')
-      .insert({ clerk_user_id: userId, gems_balance: 499, sparks_balance: 0 })
+      .insert({ clerk_user_id: userId, gems_balance: 499, sparks_balance: 0 } as any)
       .select()
       .single();
 
@@ -29,7 +29,7 @@ export async function POST() {
       return NextResponse.json({ error: 'Failed to create user' }, { status: 500 });
     }
 
-    await supabaseServer.from('user_stats').insert({ user_id: newUser.id });
+    await supabaseServer.from('user_stats').insert({ user_id: newUser.id } as any);
 
     return NextResponse.json({ user: newUser, isNew: true });
   } catch (error) {
