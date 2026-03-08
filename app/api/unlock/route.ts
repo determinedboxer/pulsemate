@@ -1,4 +1,4 @@
-﻿import { auth } from '@clerk/nextjs/server';
+import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase';
 
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
         content_id: contentId,
         model_id: modelId,
         gems_spent: gemsSpent,
-      });
+      } as any);
 
     if (unlockError) {
       return NextResponse.json({ error: 'Already unlocked or error' }, { status: 400 });
