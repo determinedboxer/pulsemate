@@ -164,7 +164,7 @@ export async function getOrCreateUser(clerkUserId: string, email: string | null)
   // Also create user_stats entry
   await client.from('user_stats').insert({
     user_id: newUser.id,
-  });
+  } as any);
 
   return newUser;
 }
