@@ -161,6 +161,8 @@ export async function getOrCreateUser(clerkUserId: string, email: string | null)
 
   if (error) throw error;
 
+  if (!newUser) throw new Error('Failed to create user');
+
   // Also create user_stats entry
   await client.from('user_stats').insert({
     user_id: newUser.id,
