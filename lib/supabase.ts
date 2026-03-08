@@ -1,4 +1,4 @@
-﻿// Supabase client configuration for PulseMate
+// Supabase client configuration for PulseMate
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -155,7 +155,7 @@ export async function getOrCreateUser(clerkUserId: string, email: string | null)
       email: email,
       gems_balance: 499,
       sparks_balance: 0,
-    })
+    } as any)
     .select()
     .single();
 
