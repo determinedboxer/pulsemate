@@ -1,0 +1,106 @@
+﻿  const handleUnlockPhoto = async (photoId: string, price: number) => {
+    if (gemsBalance < price) {
+      alert(`Not enough gems! You need ${price} gems.`);
+      return;
+    }
+
+    const newBalance = gemsBalance - price;
+    setGemsBalance(newBalance);
+    localStorage.setItem("gemsBalance", newBalance.toString());
+
+    const newUnlocked = [...unlockedPhotos, photoId];
+    setUnlockedPhotos(newUnlocked);
+    localStorage.setItem("aaliyahUnlockedPhotos", JSON.stringify(newUnlocked));
+
+    // Sync to Supabase
+    try {
+      await fetch('/api/unlock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contentType: 'photo',
+          contentId: photoId,
+          modelId: 'aaliyah',
+          gemsSpent: price
+        })
+      });
+    } catch (error) {
+      console.error('Failed to sync unlock to Supabase:', error);
+    }
+
+    alert("Photo unlocked! ");
+  };
+
+  const handleUnlockSexChat = async () => {
+    if (gemsBalance < 500) {
+      alert("Not enough gems! You need 500 gems to unlock Sex Chat.");
+      return;
+    }
+
+    const newBalance = gemsBalance - 500;
+    setGemsBalance(newBalance);
+    localStorage.setItem("gemsBalance", newBalance.toString());
+    setSexChatUnlocked(true);
+    localStorage.setItem("aaliyahSexChatUnlocked", "true");
+    
+    // Sync to Supabase
+    try {
+      await fetch('/api/unlock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contentType: 'tab',
+          contentId: 'aaliyah_sex',
+          modelId: 'aaliyah',
+          gemsSpent: 500
+        })
+      });
+    } catch (error) {
+      console.error('Failed to sync tab unlock to Supabase:', error);
+    }
+    
+    alert("Sex Chat unlocked! ");
+    setActiveTab("sex");
+    
+    if (sexMessages.length === 0) {
+      const firstSexMessage: Message = {
+        id: Date.now(),
+        sender: "aaliyah",
+        text: sexResponses[0].text,
+        timestamp: new Date(),
+        photoId: sexResponses[0].photoId,
+      };
+      setSexMessages([firstSexMessage]);
+    }
+  };
+
+  const handleUnlockDate = async () => {
+    if (gemsBalance < 500) {
+      alert("Not enough gems! You need 500 gems to unlock Date.");
+      return;
+    }
+
+    const newBalance = gemsBalance - 500;
+    setGemsBalance(newBalance);
+    localStorage.setItem("gemsBalance", newBalance.toString());
+    setDateUnlocked(true);
+    localStorage.setItem("aaliyahDateUnlocked", "true");
+    
+    // Sync to Supabase
+    try {
+      await fetch('/api/unlock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contentType: 'tab',
+          contentId: 'aaliyah_date',
+          modelId: 'aaliyah',
+          gemsSpent: 500
+        })
+      });
+    } catch (error) {
+      console.error('Failed to sync tab unlock to Supabase:', error);
+    }
+    
+    alert("Date unlocked! ");
+    setActiveTab("date");
