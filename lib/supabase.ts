@@ -1,11 +1,21 @@
-// Supabase client configuration for PulseMate
+﻿// Supabase client configuration for PulseMate
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-// Client-side Supabase client
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Client-side Supabase client - lazy loaded to avoid SSR issues
+let supabaseClient: ReturnType<typeof createClient> | null = null;
+
+export function getSupabaseClient() {
+  if (!supabaseClient) {
+    supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+  }
+  return supabaseClient;
+}
+
+// Export for backward compatibility
+export const supabase = getSupabaseClient();
 
 // Server-side Supabase client (for API routes)
 export const supabaseServer = createClient(
@@ -127,7 +137,8 @@ export interface StoryUnlock {
 
 // Helper functions for common operations
 export async function getOrCreateUser(clerkUserId: string, email: string | null) {
-  const { data: existingUser } = await supabase
+  const client = getSupabaseClient();
+  const { data: existingUser } = await client
     .from('users')
     .select('*')
     .eq('clerk_user_id', clerkUserId)
@@ -137,7 +148,7 @@ export async function getOrCreateUser(clerkUserId: string, email: string | null)
     return existingUser;
   }
 
-  const { data: newUser, error } = await supabase
+  const { data: newUser, error } = await client
     .from('users')
     .insert({
       clerk_user_id: clerkUserId,
@@ -151,7 +162,7 @@ export async function getOrCreateUser(clerkUserId: string, email: string | null)
   if (error) throw error;
 
   // Also create user_stats entry
-  await supabase.from('user_stats').insert({
+  await client.from('user_stats').insert({
     user_id: newUser.id,
   });
 
@@ -159,7 +170,8 @@ export async function getOrCreateUser(clerkUserId: string, email: string | null)
 }
 
 export async function getUserByClerkId(clerkUserId: string): Promise<User | null> {
-  const { data, error } = await supabase
+  const client = getSupabaseClient();
+  const { data, error } = await client
     .from('users')
     .select('*')
     .eq('clerk_user_id', clerkUserId)
@@ -170,7 +182,8 @@ export async function getUserByClerkId(clerkUserId: string): Promise<User | null
 }
 
 export async function updateGemsBalance(userId: string, amount: number) {
-  const { error } = await supabase
+  const client = getSupabaseClient();
+  const { error } = await client
     .from('users')
     .update({ gems_balance: amount })
     .eq('id', userId);
@@ -179,7 +192,8 @@ export async function updateGemsBalance(userId: string, amount: number) {
 }
 
 export async function updateSparksBalance(userId: string, amount: number) {
-  const { error } = await supabase
+  const client = getSupabaseClient();
+  const { error } = await client
     .from('users')
     .update({ sparks_balance: amount })
     .eq('id', userId);
