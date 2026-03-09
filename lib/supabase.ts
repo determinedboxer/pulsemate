@@ -155,9 +155,9 @@ export async function getOrCreateUser(clerkUserId: string, email: string | null)
       email: email,
       gems_balance: 499,
       sparks_balance: 0,
-    } as any)
+    })
     .select()
-    .single();
+    .single() as any;
 
   if (error) throw error;
 
@@ -165,7 +165,7 @@ export async function getOrCreateUser(clerkUserId: string, email: string | null)
 
   // Also create user_stats entry
   await client.from('user_stats').insert({
-    user_id: newUser.id,
+    user_id: (newUser as any).id,
   } as any);
 
   return newUser;
