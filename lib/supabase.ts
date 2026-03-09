@@ -155,9 +155,9 @@ export async function getOrCreateUser(clerkUserId: string, email: string | null)
       email: email,
       gems_balance: 499,
       sparks_balance: 0,
-    })
+    } as any)
     .select()
-    .single() as any;
+    .single();
 
   if (error) throw error;
 
