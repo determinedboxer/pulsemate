@@ -164,7 +164,8 @@ export async function getOrCreateUser(clerkUserId: string, email: string | null)
   if (!newUser) throw new Error('Failed to create user');
 
   // Also create user_stats entry
-  const newUserId = (newUser as any)?.id;
+  // @ts-ignore
+  const newUserId = newUser?.id;
   if (newUserId) {
     await client.from('user_stats').insert({
       user_id: newUserId,
