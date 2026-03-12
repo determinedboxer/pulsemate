@@ -1,6 +1,6 @@
 // API Route: Export User Data (GDPR Compliance)
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseServer } from '@/lib/supabase';
+import { getSupabaseServer } from '@/lib/supabase';
 import { currentUser } from '@clerk/nextjs/server';
 
 export async function GET(req: NextRequest) {
@@ -14,8 +14,10 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    const supabase = getSupabaseServer();
+
     // Get user's database ID
-    const { data: dbUser } = await supabaseServer
+    const { data: dbUser } = await supabase
       .from('users')
       .select('*')
       .eq('clerk_user_id', user.id)
@@ -40,15 +42,15 @@ export async function GET(req: NextRequest) {
       referrals,
       storiesUnlocks,
     ] = await Promise.all([
-      supabaseServer.from('chat_messages').select('*').eq('user_id', dbUser.id),
-      supabaseServer.from('unlocked_content').select('*').eq('user_id', dbUser.id),
-      supabaseServer.from('user_progress').select('*').eq('user_id', dbUser.id),
-      supabaseServer.from('sparks_transactions').select('*').eq('user_id', dbUser.id),
-      supabaseServer.from('kiss_levels').select('*').eq('user_id', dbUser.id),
-      supabaseServer.from('user_stats').select('*').eq('user_id', dbUser.id),
-      supabaseServer.from('support_tickets').select('*').eq('user_id', dbUser.id),
-      supabaseServer.from('referrals').select('*').eq('referrer_id', dbUser.id),
-      supabaseServer.from('stories_unlocks').select('*').eq('user_id', dbUser.id),
+      supabase.from('chat_messages').select('*').eq('user_id', dbUser.id),
+      supabase.from('unlocked_content').select('*').eq('user_id', dbUser.id),
+      supabase.from('user_progress').select('*').eq('user_id', dbUser.id),
+      supabase.from('sparks_transactions').select('*').eq('user_id', dbUser.id),
+      supabase.from('kiss_levels').select('*').eq('user_id', dbUser.id),
+      supabase.from('user_stats').select('*').eq('user_id', dbUser.id),
+      supabase.from('support_tickets').select('*').eq('user_id', dbUser.id),
+      supabase.from('referrals').select('*').eq('referrer_id', dbUser.id),
+      supabase.from('stories_unlocks').select('*').eq('user_id', dbUser.id),
     ]);
 
     // Compile complete data export

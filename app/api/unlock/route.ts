@@ -1,6 +1,6 @@
 import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
-import { supabaseServer } from '@/lib/supabase';
+import { getSupabaseServer } from '@/lib/supabase';
 
 export async function POST(request: Request) {
   try {
@@ -9,9 +9,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const supabase = getSupabaseServer();
     const { contentType, contentId, modelId, gemsSpent } = await request.json();
 
-    const { data: user } = await supabaseServer
+    const { data: user } = await supabase
       .from('users')
       .select('id, gems_balance')
       .eq('clerk_user_id', userId)
@@ -25,7 +26,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Insufficient gems' }, { status: 400 });
     }
 
-    const { error: unlockError } = await supabaseServer
+    const { error: unlockError } = await supabase
       .from('unlocked_content')
       .insert({
         user_id: user.id,
@@ -33,13 +34,13 @@ export async function POST(request: Request) {
         content_id: contentId,
         model_id: modelId,
         gems_spent: gemsSpent,
-      } as any);
+      });
 
     if (unlockError) {
       return NextResponse.json({ error: 'Already unlocked or error' }, { status: 400 });
     }
 
-    const { data: updatedUser } = await supabaseServer
+    const { data: updatedUser } = await supabase
       .from('users')
       .update({ gems_balance: user.gems_balance - gemsSpent })
       .eq('id', user.id)
@@ -48,7 +49,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ 
       success: true, 
-      gemsBalance: updatedUser.gems_balance 
+      gemsBalance: updatedUser ? updatedUser.gems_balance : user.gems_balance - gemsSpent
     });
   } catch (error) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

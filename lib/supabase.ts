@@ -1,27 +1,29 @@
 // Supabase client configuration for PulseMate
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
 // Client-side Supabase client - lazy loaded to avoid SSR issues
-let supabaseClient: ReturnType<typeof createClient> | null = null;
+let supabaseClient: any = null;
 
-export function getSupabaseClient() {
+export function getSupabaseClient(): any {
   if (!supabaseClient) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
     supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
   }
   return supabaseClient;
 }
 
-// Export for backward compatibility
-export const supabase = getSupabaseClient();
+// Server-side Supabase client (for API routes) - lazy loaded
+let supabaseServerInstance: any = null;
 
-// Server-side Supabase client (for API routes)
-export const supabaseServer = createClient(
-  supabaseUrl,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+export function getSupabaseServer(): any {
+  if (!supabaseServerInstance) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+    supabaseServerInstance = createClient(supabaseUrl, serviceRoleKey);
+  }
+  return supabaseServerInstance;
+}
 
 // Database Types
 export interface User {
@@ -145,34 +147,34 @@ export async function getOrCreateUser(clerkUserId: string, email: string | null)
     .single();
 
   if (existingUser) {
-    return existingUser;
+    return existingUser as User;
   }
+
+  const insertData = {
+    clerk_user_id: clerkUserId,
+    email: email,
+    gems_balance: 499,
+    sparks_balance: 0,
+  };
 
   const { data: newUser, error } = await client
     .from('users')
-    .insert({
-      clerk_user_id: clerkUserId,
-      email: email,
-      gems_balance: 499,
-      sparks_balance: 0,
-    } as any)
-    .select()
-    .single();
+    .insert(insertData)
+    .select();
 
   if (error) throw error;
 
-  if (!newUser) throw new Error('Failed to create user');
+  if (!newUser || newUser.length === 0) throw new Error('Failed to create user');
 
   // Also create user_stats entry
-  // @ts-ignore
-  const newUserId = newUser?.id;
-  if (newUserId) {
+  const createdUser = newUser[0] as User;
+  if (createdUser.id) {
     await client.from('user_stats').insert({
-      user_id: newUserId,
-    } as any);
+      user_id: createdUser.id,
+    });
   }
 
-  return newUser;
+  return createdUser;
 }
 
 export async function getUserByClerkId(clerkUserId: string): Promise<User | null> {
@@ -184,7 +186,7 @@ export async function getUserByClerkId(clerkUserId: string): Promise<User | null
     .single();
 
   if (error) return null;
-  return data;
+  return data as User;
 }
 
 export async function updateGemsBalance(userId: string, amount: number) {

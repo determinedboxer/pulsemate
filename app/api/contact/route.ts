@@ -1,7 +1,7 @@
 // API Route: Contact Form Submission
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
-import { supabaseServer } from '@/lib/supabase';
+import { getSupabaseServer } from '@/lib/supabase';
 import { currentUser } from '@clerk/nextjs/server';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -19,12 +19,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const supabase = getSupabaseServer();
+
     // Get current user if authenticated
     const user = await currentUser();
     let userId: string | null = null;
 
     if (user) {
-      const { data: dbUser } = await supabaseServer
+      const { data: dbUser } = await supabase
         .from('users')
         .select('id')
         .eq('clerk_user_id', user.id)
@@ -34,7 +36,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Save ticket to database
-    const { data: ticket, error: dbError } = await supabaseServer
+    const { data: ticket, error: dbError } = await supabase
       .from('support_tickets')
       .insert({
         user_id: userId,

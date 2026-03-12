@@ -1,6 +1,6 @@
-﻿import { auth } from '@clerk/nextjs/server';
+import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
-import { supabaseServer } from '@/lib/supabase';
+import { getSupabaseServer } from '@/lib/supabase';
 
 export async function GET() {
   try {
@@ -9,7 +9,9 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: user } = await supabaseServer
+    const supabase = getSupabaseServer();
+
+    const { data: user } = await supabase
       .from('users')
       .select('id')
       .eq('clerk_user_id', userId)
@@ -19,7 +21,7 @@ export async function GET() {
       return NextResponse.json({ unlocked: [] });
     }
 
-    const { data: unlocked } = await supabaseServer
+    const { data: unlocked } = await supabase
       .from('unlocked_content')
       .select('content_type, content_id, model_id')
       .eq('user_id', user.id);

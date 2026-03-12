@@ -1,6 +1,6 @@
-﻿import { auth } from '@clerk/nextjs/server';
+import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
-import { supabaseServer } from '@/lib/supabase';
+import { getSupabaseServer } from '@/lib/supabase';
 
 export async function GET() {
   try {
@@ -9,7 +9,8 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: user } = await supabaseServer
+    const supabase = getSupabaseServer();
+    const { data: user } = await supabase
       .from('users')
       .select('gems_balance')
       .eq('clerk_user_id', userId)
@@ -32,9 +33,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const supabase = getSupabaseServer();
     const { amount } = await request.json();
 
-    const { data: user } = await supabaseServer
+    const { data: user } = await supabase
       .from('users')
       .select('id, gems_balance')
       .eq('clerk_user_id', userId)
@@ -46,14 +48,14 @@ export async function POST(request: Request) {
 
     const newBalance = user.gems_balance + amount;
 
-    const { data: updatedUser } = await supabaseServer
+    const { data: updatedUser } = await supabase
       .from('users')
       .update({ gems_balance: newBalance })
       .eq('id', user.id)
       .select()
       .single();
 
-    return NextResponse.json({ gemsBalance: updatedUser.gems_balance });
+    return NextResponse.json({ gemsBalance: updatedUser ? updatedUser.gems_balance : newBalance });
   } catch (error) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
