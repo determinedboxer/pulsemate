@@ -1,13 +1,8 @@
 // app/api/crypto/payment-status/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { auth as clerkAuth } from '@clerk/nextjs/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseServer } from '@/lib/supabase';
 import { nowpaymentsAPI } from '@/lib/nowpayments-api';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
 
 export async function GET(req: NextRequest) {
   try {
@@ -30,6 +25,8 @@ export async function GET(req: NextRequest) {
         { status: 400 }
       );
     }
+
+    const supabase = getSupabaseServer();
 
     // Get transaction from database
     let query = supabase

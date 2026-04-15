@@ -13,16 +13,24 @@ export function getSupabaseClient(): any {
   return supabaseClient;
 }
 
-// Server-side Supabase client (for API routes) - lazy loaded
-let supabaseServerInstance: any = null;
-
+// Server-side Supabase client (for API routes)
+// NOT cached as a singleton — env vars must be read fresh each request
+// to avoid stale/undefined values from Next.js cold-start ordering.
 export function getSupabaseServer(): any {
-  if (!supabaseServerInstance) {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    supabaseServerInstance = createClient(supabaseUrl, serviceRoleKey);
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error(
+      `Supabase server env vars missing — ` +
+      `URL: ${supabaseUrl ? 'ok' : 'MISSING'}, ` +
+      `SERVICE_ROLE_KEY: ${serviceRoleKey ? 'ok' : 'MISSING'}`
+    );
   }
-  return supabaseServerInstance;
+
+  return createClient(supabaseUrl, serviceRoleKey, {
+    auth: { persistSession: false },
+  });
 }
 
 // Database Types

@@ -1,112 +1,187 @@
 // app/api/crypto/create-payment/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { auth as clerkAuth } from '@clerk/nextjs/server';
-import { createClient } from '@supabase/supabase-js';
+import { auth } from '@clerk/nextjs/server';
+import { getSupabaseServer } from '@/lib/supabase';
 import { nowpaymentsAPI } from '@/lib/nowpayments-api';
 import { getProductById } from '@/lib/payment-products';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
 export async function POST(req: NextRequest) {
+  const tag = '[create-payment]';
+
+  // ─── 1. Env var guard ────────────────────────────────────────────────────
+  const requiredEnv = {
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+    CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
+  };
+  const missingEnv = Object.entries(requiredEnv)
+    .filter(([, v]) => !v)
+    .map(([k]) => k);
+
+  if (missingEnv.length > 0) {
+    console.error(`${tag} Missing env vars:`, missingEnv);
+    return NextResponse.json(
+      { error: `Server misconfiguration: missing ${missingEnv.join(', ')}` },
+      { status: 500 }
+    );
+  }
+
+  // ─── 2. Clerk authentication ─────────────────────────────────────────────
+  let clerkUserId: string | null = null;
   try {
-    // Authenticate user
-    const { userId: clerkUserId } = await clerkAuth();
+    const session = await auth();
+    clerkUserId = session.userId;
+    console.log(`${tag} Clerk auth:`, {
+      userId: clerkUserId ?? 'null — user is not signed in',
+    });
+  } catch (err: any) {
+    console.error(`${tag} auth() threw:`, err.message);
+    return NextResponse.json(
+      { error: `Auth error: ${err.message}` },
+      { status: 500 }
+    );
+  }
 
-    if (!clerkUserId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+  if (!clerkUserId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
 
-    // Get or create user in database
-    const { data: dbUser, error: userError } = await supabase
+  // ─── 3. Parse + validate request body ────────────────────────────────────
+  let body: {
+    productType: string;
+    productId: string;
+    amount: number;
+    gemsAmount?: number;
+    modelId?: string;
+    payCurrency: string;
+  };
+
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
+
+  const { productType, productId, amount, gemsAmount, modelId, payCurrency } = body;
+
+  if (!productType || !productId || !amount || !payCurrency) {
+    return NextResponse.json(
+      { error: 'Missing required fields: productType, productId, amount, payCurrency' },
+      { status: 400 }
+    );
+  }
+
+  const product = getProductById(productType, productId);
+  if (!product) {
+    console.error(`${tag} Invalid product:`, { productType, productId });
+    return NextResponse.json({ error: 'Invalid product' }, { status: 400 });
+  }
+
+  // ─── 4. Supabase: get or create user ─────────────────────────────────────
+  let supabase: ReturnType<typeof getSupabaseServer>;
+  try {
+    supabase = getSupabaseServer();
+  } catch (err: any) {
+    console.error(`${tag} getSupabaseServer threw:`, err.message);
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+
+  let dbUserId: string;
+
+  const { data: existingUser, error: fetchError } = await supabase
+    .from('users')
+    .select('id')
+    .eq('clerk_user_id', clerkUserId)
+    .single();
+
+  if (fetchError && fetchError.code !== 'PGRST116') {
+    // PGRST116 = row not found — anything else is a real DB error
+    console.error(`${tag} DB error fetching user:`, {
+      code: fetchError.code,
+      message: fetchError.message,
+      hint: fetchError.hint,
+      details: fetchError.details,
+      clerkUserId,
+    });
+    return NextResponse.json(
+      { error: `DB error (${fetchError.code}): ${fetchError.message}` },
+      { status: 500 }
+    );
+  }
+
+  if (existingUser) {
+    dbUserId = existingUser.id;
+    console.log(`${tag} Found existing user:`, dbUserId);
+  } else {
+    // User signed in via Clerk but not yet synced to DB — create them now
+    console.log(`${tag} User not in DB, inserting for clerkUserId:`, clerkUserId);
+    const { data: newUser, error: insertError } = await supabase
       .from('users')
-      .select('id')
-      .eq('clerk_user_id', clerkUserId)
-      .single();
-
-    if (userError && userError.code !== 'PGRST116') {
-      console.error('Database error:', userError);
-      return NextResponse.json(
-        { error: 'Failed to fetch user' },
-        { status: 500 }
-      );
-    }
-
-    let dbUserId = dbUser?.id;
-
-    // Create user if doesn't exist
-    if (!dbUserId) {
-      const { data: newUser, error: createError } = await supabase
-        .from('users')
-        .insert({
-          clerk_user_id: clerkUserId,
-          username: 'User',
-          email: '',
-        })
-        .select('id')
-        .single();
-
-      if (createError) {
-        console.error('Failed to create user:', createError);
-        return NextResponse.json(
-          { error: 'Failed to create user' },
-          { status: 500 }
-        );
-      }
-
-      dbUserId = newUser.id;
-    }
-
-    // Parse request body
-    const body = await req.json();
-    const { productType, productId, amount, gemsAmount, modelId, payCurrency } = body;
-
-    // Validate product
-    const product = getProductById(productType, productId);
-    if (!product) {
-      return NextResponse.json(
-        { error: 'Invalid product' },
-        { status: 400 }
-      );
-    }
-
-    // Create payment transaction record
-    const { data: transaction, error: transactionError } = await supabase
-      .from('payment_transactions')
       .insert({
-        user_id: dbUserId,
-        product_type: productType,
-        product_id: productId,
-        amount_usd: amount,
-        gems_amount: gemsAmount || 0,
-        sparks_amount: 0,
-        model_id: modelId,
-        status: 'pending',
-        payment_method: 'crypto',
-        metadata: {
-          product_name: product.name,
-          pay_currency: payCurrency,
-        },
+        clerk_user_id: clerkUserId,
+        username: 'User',
+        email: '',
+        gems_balance: 499,
+        sparks_balance: 0,
       })
-      .select()
+      .select('id')
       .single();
 
-    if (transactionError) {
-      console.error('Transaction creation error:', transactionError);
+    if (insertError) {
+      console.error(`${tag} DB error creating user:`, {
+        code: insertError.code,
+        message: insertError.message,
+        hint: insertError.hint,
+        details: insertError.details,
+      });
       return NextResponse.json(
-        { error: 'Failed to create transaction' },
+        { error: `Failed to create user (${insertError.code}): ${insertError.message}` },
         { status: 500 }
       );
     }
 
-    // Create NOWPayments payment
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const paymentRequest = {
+    dbUserId = newUser.id;
+    console.log(`${tag} Created new user:`, dbUserId);
+  }
+
+  // ─── 5. Create payment_transactions record ────────────────────────────────
+  const { data: transaction, error: txError } = await supabase
+    .from('payment_transactions')
+    .insert({
+      user_id: dbUserId,
+      product_type: productType,
+      product_id: productId,
+      amount_usd: amount,
+      gems_amount: gemsAmount ?? 0,
+      sparks_amount: 0,
+      model_id: modelId ?? null,
+      status: 'pending',
+      payment_method: 'crypto',
+      metadata: { product_name: product.name, pay_currency: payCurrency },
+    })
+    .select()
+    .single();
+
+  if (txError) {
+    console.error(`${tag} DB error creating transaction:`, {
+      code: txError.code,
+      message: txError.message,
+      hint: txError.hint,
+    });
+    return NextResponse.json(
+      { error: `Failed to create transaction (${txError.code}): ${txError.message}` },
+      { status: 500 }
+    );
+  }
+
+  console.log(`${tag} Transaction created:`, transaction.id);
+
+  // ─── 6. Call NOWPayments ──────────────────────────────────────────────────
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
+  let cryptoPayment: any;
+  try {
+    cryptoPayment = await nowpaymentsAPI.createPayment({
       price_amount: amount,
       price_currency: 'usd',
       pay_currency: payCurrency,
@@ -115,80 +190,62 @@ export async function POST(req: NextRequest) {
       ipn_callback_url: `${appUrl}/api/crypto/ipn`,
       success_url: `${appUrl}/shop/crypto-success?order_id=${transaction.id}`,
       cancel_url: `${appUrl}/shop`,
-    };
-
-    let cryptoPayment;
-    try {
-      cryptoPayment = await nowpaymentsAPI.createPayment(paymentRequest);
-      console.log('NOWPayments response:', JSON.stringify(cryptoPayment, null, 2));
-    } catch (apiError: any) {
-      console.error('NOWPayments API error:', apiError);
-      
-      // Update transaction as failed
-      await supabase
-        .from('payment_transactions')
-        .update({ status: 'failed' })
-        .eq('id', transaction.id);
-      
-      return NextResponse.json(
-        { error: `Payment provider error: ${apiError.message}` },
-        { status: 500 }
-      );
-    }
-
-    // Validate response
-    const paymentUrl = cryptoPayment.payment_url || cryptoPayment.invoice_url;
-    const paymentId = cryptoPayment.payment_id || cryptoPayment.invoice_id;
-    
-    if (!cryptoPayment || !paymentUrl) {
-      console.error('Invalid NOWPayments response - missing payment/invoice URL:', cryptoPayment);
-      
-      await supabase
-        .from('payment_transactions')
-        .update({ status: 'failed' })
-        .eq('id', transaction.id);
-      
-      return NextResponse.json(
-        { error: 'Payment provider did not return a payment URL. Please check your NOWPayments account status.' },
-        { status: 500 }
-      );
-    }
-
-    // Update transaction with crypto payment ID
+    });
+    console.log(`${tag} NOWPayments response:`, JSON.stringify(cryptoPayment, null, 2));
+  } catch (apiErr: any) {
+    console.error(`${tag} NOWPayments error:`, apiErr.message);
     await supabase
       .from('payment_transactions')
-      .update({
-        stripe_session_id: paymentId, // Reuse this field for crypto payment ID
-        status: 'processing',
-        metadata: {
-          ...transaction.metadata,
-          payment_id: paymentId,
-          invoice_id: cryptoPayment.invoice_id,
-          pay_address: cryptoPayment.pay_address,
-          pay_amount: cryptoPayment.pay_amount,
-          pay_currency: cryptoPayment.pay_currency,
-        },
-      })
+      .update({ status: 'failed' })
       .eq('id', transaction.id);
-
-    return NextResponse.json({
-      paymentId: paymentId,
-      paymentUrl: paymentUrl,
-      payAddress: cryptoPayment.pay_address,
-      payAmount: cryptoPayment.pay_amount,
-      payCurrency: cryptoPayment.pay_currency,
-      orderId: transaction.id,
-    });
-  } catch (error: any) {
-    console.error('Crypto payment creation error:', error);
-    console.error('Error details:', {
-      message: error.message,
-      stack: error.stack,
-      name: error.name,
-    });
     return NextResponse.json(
-      { error: error.message || 'Failed to create crypto payment' },
+      { error: `Payment provider error: ${apiErr.message}` },
       { status: 500 }
     );
   }
+
+  const paymentUrl = cryptoPayment.payment_url || cryptoPayment.invoice_url;
+  const paymentId = cryptoPayment.payment_id || cryptoPayment.invoice_id;
+
+  if (!paymentUrl) {
+    console.error(`${tag} NOWPayments returned no URL:`, cryptoPayment);
+    await supabase
+      .from('payment_transactions')
+      .update({ status: 'failed' })
+      .eq('id', transaction.id);
+    return NextResponse.json(
+      { error: 'Payment provider did not return a payment URL' },
+      { status: 500 }
+    );
+  }
+
+  // ─── 7. Update transaction with NOWPayments payment ID ───────────────────
+  await supabase
+    .from('payment_transactions')
+    .update({
+      stripe_session_id: paymentId,
+      status: 'processing',
+      metadata: {
+        ...transaction.metadata,
+        payment_id: paymentId,
+        invoice_id: cryptoPayment.invoice_id,
+        pay_address: cryptoPayment.pay_address,
+        pay_amount: cryptoPayment.pay_amount,
+        pay_currency: cryptoPayment.pay_currency,
+      },
+    })
+    .eq('id', transaction.id);
+
+  console.log(`${tag} Done. paymentUrl:`, paymentUrl);
+
+  // ─── 8. Return response ───────────────────────────────────────────────────
+  return NextResponse.json({
+    success: true,
+    paymentUrl,
+    paymentId,
+    payAddress: cryptoPayment.pay_address,
+    payAmount: cryptoPayment.pay_amount,
+    payCurrency: cryptoPayment.pay_currency,
+    orderId: transaction.id,
+  });
 }
