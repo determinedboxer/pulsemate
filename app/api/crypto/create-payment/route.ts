@@ -1,5 +1,7 @@
 // app/api/crypto/create-payment/route.ts
 import { NextRequest, NextResponse } from 'next/server';
+
+export const runtime = 'nodejs'; // must NOT run on Edge — Supabase SDK requires Node.js fetch
 import { auth } from '@clerk/nextjs/server';
 import { getSupabaseServer } from '@/lib/supabase';
 import { nowpaymentsAPI } from '@/lib/nowpayments-api';
@@ -77,7 +79,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid product' }, { status: 400 });
   }
 
-  // ─── 4. Supabase: get or create user ─────────────────────────────────────
+  // ─── 4. Supabase: upsert user by clerk_user_id ───────────────────────────
   let supabase: ReturnType<typeof getSupabaseServer>;
   try {
     supabase = getSupabaseServer();
@@ -86,63 +88,42 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 
-  let dbUserId: string;
-
-  const { data: existingUser, error: fetchError } = await supabase
+  // Atomic upsert — avoids race conditions and the column-must-exist-in-cache issue.
+  // Requires a UNIQUE constraint on clerk_user_id (run the SQL migration first).
+  const { data: upsertedUser, error: upsertError } = await supabase
     .from('users')
-    .select('id')
-    .eq('clerk_user_id', clerkUserId)
-    .single();
-
-  if (fetchError && fetchError.code !== 'PGRST116') {
-    // PGRST116 = row not found — anything else is a real DB error
-    console.error(`${tag} DB error fetching user:`, {
-      code: fetchError.code,
-      message: fetchError.message,
-      hint: fetchError.hint,
-      details: fetchError.details,
-      clerkUserId,
-    });
-    return NextResponse.json(
-      { error: `DB error (${fetchError.code}): ${fetchError.message}` },
-      { status: 500 }
-    );
-  }
-
-  if (existingUser) {
-    dbUserId = existingUser.id;
-    console.log(`${tag} Found existing user:`, dbUserId);
-  } else {
-    // User signed in via Clerk but not yet synced to DB — create them now
-    console.log(`${tag} User not in DB, inserting for clerkUserId:`, clerkUserId);
-    const { data: newUser, error: insertError } = await supabase
-      .from('users')
-      .insert({
+    .upsert(
+      {
         clerk_user_id: clerkUserId,
         username: 'User',
         email: '',
         gems_balance: 499,
         sparks_balance: 0,
-      })
-      .select('id')
-      .single();
+      },
+      {
+        onConflict: 'clerk_user_id',
+        ignoreDuplicates: false, // return the existing row on conflict
+      }
+    )
+    .select('id')
+    .single();
 
-    if (insertError) {
-      console.error(`${tag} DB error creating user:`, {
-        code: insertError.code,
-        message: insertError.message,
-        hint: insertError.hint,
-        details: insertError.details,
-      });
-      return NextResponse.json(
-        { error: `Failed to create user (${insertError.code}): ${insertError.message}` },
-        { status: 500 }
-      );
-    }
-
-    dbUserId = newUser.id;
-    console.log(`${tag} Created new user:`, dbUserId);
+  if (upsertError) {
+    console.error(`${tag} DB upsert error:`, {
+      code: upsertError.code,
+      message: upsertError.message,
+      hint: upsertError.hint,
+      details: upsertError.details,
+      clerkUserId,
+    });
+    return NextResponse.json(
+      { error: `DB error (${upsertError.code}): ${upsertError.message}` },
+      { status: 500 }
+    );
   }
+
+  const dbUserId: string = upsertedUser.id;
+  console.log(`${tag} User resolved:`, dbUserId);
 
   // ─── 5. Create payment_transactions record ────────────────────────────────
   const { data: transaction, error: txError } = await supabase
