@@ -88,42 +88,27 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 
-  // Atomic upsert — avoids race conditions and the column-must-exist-in-cache issue.
-  // Requires a UNIQUE constraint on clerk_user_id (run the SQL migration first).
-  const { data: upsertedUser, error: upsertError } = await supabase
-    .from('users')
-    .upsert(
-      {
-        clerk_user_id: clerkUserId,
-        username: 'User',
-        email: '',
-        gems_balance: 499,
-        sparks_balance: 0,
-      },
-      {
-        onConflict: 'clerk_user_id',
-        ignoreDuplicates: false, // return the existing row on conflict
-      }
-    )
-    .select('id')
-    .single();
+  // Use RPC to bypass PostgREST schema cache — the SQL function runs directly
+  // in Postgres so it is immune to PGRST204 "column not in schema cache" errors.
+  const { data: rpcUserId, error: rpcError } = await supabase
+    .rpc('get_or_create_user_by_clerk_id', { p_clerk_user_id: clerkUserId });
 
-  if (upsertError) {
-    console.error(`${tag} DB upsert error:`, {
-      code: upsertError.code,
-      message: upsertError.message,
-      hint: upsertError.hint,
-      details: upsertError.details,
+  if (rpcError) {
+    console.error(`${tag} RPC error:`, {
+      code: rpcError.code,
+      message: rpcError.message,
+      hint: rpcError.hint,
+      details: rpcError.details,
       clerkUserId,
     });
     return NextResponse.json(
-      { error: `DB error (${upsertError.code}): ${upsertError.message}` },
+      { error: `DB error (${rpcError.code}): ${rpcError.message}` },
       { status: 500 }
     );
   }
 
-  const dbUserId: string = upsertedUser.id;
-  console.log(`${tag} User resolved:`, dbUserId);
+  const dbUserId: string = rpcUserId as string;
+  console.log(`${tag} User resolved via RPC:`, dbUserId);
 
   // ─── 5. Create payment_transactions record ────────────────────────────────
   const { data: transaction, error: txError } = await supabase
