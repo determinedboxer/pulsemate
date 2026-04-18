@@ -1,11 +1,12 @@
 // app/api/crypto/create-payment/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 
-export const runtime = 'nodejs'; // must NOT run on Edge — Supabase SDK requires Node.js fetch
+export const runtime = 'nodejs';
 import { auth } from '@clerk/nextjs/server';
 import { getSupabaseServer } from '@/lib/supabase';
 import { nowpaymentsAPI } from '@/lib/nowpayments-api';
 import { getProductById } from '@/lib/payment-products';
+import { Pool } from 'pg';
 
 export async function POST(req: NextRequest) {
   const tag = '[create-payment]';
@@ -88,27 +89,30 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 
-  // Use RPC to bypass PostgREST schema cache — the SQL function runs directly
-  // in Postgres so it is immune to PGRST204 "column not in schema cache" errors.
-  const { data: rpcUserId, error: rpcError } = await supabase
-    .rpc('get_or_create_user_by_clerk_id', { p_clerk_user_id: clerkUserId });
-
-  if (rpcError) {
-    console.error(`${tag} RPC error:`, {
-      code: rpcError.code,
-      message: rpcError.message,
-      hint: rpcError.hint,
-      details: rpcError.details,
-      clerkUserId,
-    });
-    return NextResponse.json(
-      { error: `DB error (${rpcError.code}): ${rpcError.message}` },
-      { status: 500 }
-    );
+  // Direct Postgres connection — bypasses PostgREST and its broken schema cache.
+  const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+  let dbUserId: string;
+  try {
+    const client = await pool.connect();
+    try {
+      const result = await client.query<{ id: string }>(
+        `INSERT INTO public.users (clerk_user_id, username, email, gems_balance, sparks_balance)
+         VALUES ($1, 'User', '', 499, 0)
+         ON CONFLICT (clerk_user_id) DO UPDATE SET updated_at = NOW()
+         RETURNING id`,
+        [clerkUserId]
+      );
+      dbUserId = result.rows[0].id;
+      console.log(`${tag} User resolved via direct pg:`, dbUserId);
+    } finally {
+      client.release();
+    }
+  } catch (pgErr: any) {
+    console.error(`${tag} Direct pg error:`, pgErr.message);
+    return NextResponse.json({ error: `DB error: ${pgErr.message}` }, { status: 500 });
+  } finally {
+    await pool.end();
   }
-
-  const dbUserId: string = rpcUserId as string;
-  console.log(`${tag} User resolved via RPC:`, dbUserId);
 
   // ─── 5. Create payment_transactions record ────────────────────────────────
   const { data: transaction, error: txError } = await supabase
